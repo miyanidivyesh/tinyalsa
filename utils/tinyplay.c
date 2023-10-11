@@ -41,7 +41,7 @@
 #define OPTPARSE_IMPLEMENTATION
 #include "optparse.h"
 
-#define __1KB 1024
+#define __1KB 1400
 
 struct cmd
 {
@@ -385,13 +385,7 @@ int main()
 
     // 	// Copy the four-byte client IP address into an IP address structure
     // 	// memcpy(&client_ip_addr, &client_addr.sin_addr.s_addr, 4);
-    // 	printf("%15s | %5d | %6d | ", inet_ntoa((client_addr.sin_addr)), ntohs(client_addr.sin_port), n);
-
-    // 	for (int i = 0; i < 16; i++)
-    // 		printf("%2x ", buffer[i]);
-
-    // 	printf("\n");
-    // }
+	// }
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if (play_sample(&ctx) < 0)
@@ -458,7 +452,7 @@ int sample_is_playable(const struct cmd *cmd)
 
 int play_sample(struct ctx *ctx)
 {
-    char *buffer;
+    unsigned char *buffer;
     bool is_stdin_source = ctx->file == stdin;
     size_t buffer_size = 0;
     size_t num_read = 0;
@@ -491,6 +485,11 @@ int play_sample(struct ctx *ctx)
         // num_read = fread(buffer, 1, read_size, ctx->file);
         bzero(buffer, __1KB);
         num_read = recvfrom(sockfd, buffer, __1KB, 0, (struct sockaddr *)&client_addr, &addr_size);
+ 	printf("%15s | %5d | %6ld | ", inet_ntoa((client_addr.sin_addr)), ntohs(client_addr.sin_port), num_read);
+
+ 	for (int i = 0; i < 16; i++)
+ 		printf("%2.x ", buffer[i]);
+     	printf("\n");
         if (num_read > 0)
         {
             int written_frames = pcm_writei(ctx->pcm, buffer,
