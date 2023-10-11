@@ -65,7 +65,7 @@ void cmd_init(struct cmd *cmd)
     cmd->config.period_size = 1024;
     cmd->config.period_count = 2;
     cmd->config.channels = 2;
-    cmd->config.rate = 48000;
+    cmd->config.rate = 44100;
     cmd->config.format = PCM_FORMAT_S16_LE;
     cmd->config.silence_threshold = cmd->config.period_size * cmd->config.period_count;
     cmd->config.silence_size = 0;
@@ -118,10 +118,10 @@ struct ctx
     size_t file_size;
 };
 
-static bool is_wave_file(const char *filetype)
-{
-    return filetype != NULL && strcmp(filetype, "wav") == 0;
-}
+// static bool is_wave_file(const char *filetype)
+// {
+//     return filetype != NULL && strcmp(filetype, "wav") == 0;
+// }
 
 static enum pcm_format signed_pcm_bits_to_format(int bits)
 {
@@ -140,112 +140,112 @@ static enum pcm_format signed_pcm_bits_to_format(int bits)
     }
 }
 
-static int parse_wave_file(struct ctx *ctx, const char *filename)
-{
-    if (fread(&ctx->wave_header, sizeof(ctx->wave_header), 1, ctx->file) != 1)
-    {
-        fprintf(stderr, "error: '%s' does not contain a riff/wave header\n", filename);
-        return -1;
-    }
+// static int parse_wave_file(struct ctx *ctx, const char *filename)
+// {
+//     if (fread(&ctx->wave_header, sizeof(ctx->wave_header), 1, ctx->file) != 1)
+//     {
+//         fprintf(stderr, "error: '%s' does not contain a riff/wave header\n", filename);
+//         return -1;
+//     }
 
-    if (ctx->wave_header.riff_id != ID_RIFF || ctx->wave_header.wave_id != ID_WAVE)
-    {
-        fprintf(stderr, "error: '%s' is not a riff/wave file\n", filename);
-        return -1;
-    }
+//     if (ctx->wave_header.riff_id != ID_RIFF || ctx->wave_header.wave_id != ID_WAVE)
+//     {
+//         fprintf(stderr, "error: '%s' is not a riff/wave file\n", filename);
+//         return -1;
+//     }
 
-    bool more_chunks = true;
-    do
-    {
-        if (fread(&ctx->chunk_header, sizeof(ctx->chunk_header), 1, ctx->file) != 1)
-        {
-            fprintf(stderr, "error: '%s' does not contain a data chunk\n", filename);
-            return -1;
-        }
-        switch (ctx->chunk_header.id)
-        {
-        case ID_FMT:
-            if (fread(&ctx->chunk_fmt, sizeof(ctx->chunk_fmt), 1, ctx->file) != 1)
-            {
-                fprintf(stderr, "error: '%s' has incomplete format chunk\n", filename);
-                return -1;
-            }
-            /* If the format header is larger, skip the rest */
-            if (ctx->chunk_header.sz > sizeof(ctx->chunk_fmt))
-            {
-                fseek(ctx->file, ctx->chunk_header.sz - sizeof(ctx->chunk_fmt), SEEK_CUR);
-            }
-            break;
-        case ID_DATA:
-            /* Stop looking for chunks */
-            more_chunks = false;
-            break;
-        default:
-            /* Unknown chunk, skip bytes */
-            fseek(ctx->file, ctx->chunk_header.sz, SEEK_CUR);
-        }
-    } while (more_chunks);
+//     bool more_chunks = true;
+//     do
+//     {
+//         if (fread(&ctx->chunk_header, sizeof(ctx->chunk_header), 1, ctx->file) != 1)
+//         {
+//             fprintf(stderr, "error: '%s' does not contain a data chunk\n", filename);
+//             return -1;
+//         }
+//         switch (ctx->chunk_header.id)
+//         {
+//         case ID_FMT:
+//             if (fread(&ctx->chunk_fmt, sizeof(ctx->chunk_fmt), 1, ctx->file) != 1)
+//             {
+//                 fprintf(stderr, "error: '%s' has incomplete format chunk\n", filename);
+//                 return -1;
+//             }
+//             /* If the format header is larger, skip the rest */
+//             if (ctx->chunk_header.sz > sizeof(ctx->chunk_fmt))
+//             {
+//                 fseek(ctx->file, ctx->chunk_header.sz - sizeof(ctx->chunk_fmt), SEEK_CUR);
+//             }
+//             break;
+//         case ID_DATA:
+//             /* Stop looking for chunks */
+//             more_chunks = false;
+//             break;
+//         default:
+//             /* Unknown chunk, skip bytes */
+//             fseek(ctx->file, ctx->chunk_header.sz, SEEK_CUR);
+//         }
+//     } while (more_chunks);
 
-    return 0;
-}
+//     return 0;
+// }
 
 static int ctx_init(struct ctx *ctx, struct cmd *cmd)
 {
     unsigned int bits = cmd->bits;
     struct pcm_config *config = &cmd->config;
-    bool is_float = cmd->is_float;
+    // bool is_float = cmd->is_float;
 
     if (cmd->filename == NULL)
     {
         fprintf(stderr, "filename not specified\n");
         return -1;
     }
-    if (strcmp(cmd->filename, "-") == 0)
-    {
-        ctx->file = stdin;
-    }
-    else
-    {
-        ctx->file = fopen(cmd->filename, "rb");
-        fseek(ctx->file, 0L, SEEK_END);
-        ctx->file_size = ftell(ctx->file);
-        fseek(ctx->file, 0L, SEEK_SET);
-    }
+    // if (strcmp(cmd->filename, "-") == 0)
+    // {
+    //     ctx->file = stdin;
+    // }
+    // else
+    // {
+    //     ctx->file = fopen(cmd->filename, "rb");
+    //     fseek(ctx->file, 0L, SEEK_END);
+    //     ctx->file_size = ftell(ctx->file);
+    //     fseek(ctx->file, 0L, SEEK_SET);
+    // }
 
-    if (ctx->file == NULL)
-    {
-        fprintf(stderr, "failed to open '%s'\n", cmd->filename);
-        return -1;
-    }
+    // if (ctx->file == NULL)
+    // {
+    //     fprintf(stderr, "failed to open '%s'\n", cmd->filename);
+    //     return -1;
+    // }
 
-    if (is_wave_file(cmd->filetype))
-    {
-        if (parse_wave_file(ctx, cmd->filename) != 0)
-        {
-            fclose(ctx->file);
-            return -1;
-        }
-        config->channels = ctx->chunk_fmt.num_channels;
-        config->rate = ctx->chunk_fmt.sample_rate;
-        bits = ctx->chunk_fmt.bits_per_sample;
-        is_float = ctx->chunk_fmt.audio_format == WAVE_FORMAT_IEEE_FLOAT;
-        ctx->file_size = (size_t)ctx->chunk_header.sz;
-    }
+    // if (is_wave_file(cmd->filetype))
+    // {
+    //     if (parse_wave_file(ctx, cmd->filename) != 0)
+    //     {
+    //         fclose(ctx->file);
+    //         return -1;
+    //     }
+    //     config->channels = ctx->chunk_fmt.num_channels;
+    //     config->rate = ctx->chunk_fmt.sample_rate;
+    //     bits = ctx->chunk_fmt.bits_per_sample;
+    //     is_float = ctx->chunk_fmt.audio_format == WAVE_FORMAT_IEEE_FLOAT;
+    //     ctx->file_size = (size_t)ctx->chunk_header.sz;
+    // }
 
-    if (is_float)
-    {
-        config->format = PCM_FORMAT_FLOAT_LE;
-    }
-    else
-    {
+    // if (is_float)
+    // {
+    //     config->format = PCM_FORMAT_FLOAT_LE;
+    // }
+    // else
+    // {
         config->format = signed_pcm_bits_to_format(bits);
         if (config->format == -1)
         {
             fprintf(stderr, "bit count '%u' not supported\n", bits);
-            fclose(ctx->file);
+            // fclose(ctx->file);
             return -1;
         }
-    }
+    // }
 
     ctx->pcm = pcm_open(cmd->card,
                         cmd->device,
@@ -256,7 +256,7 @@ static int ctx_init(struct ctx *ctx, struct cmd *cmd)
         fprintf(stderr, "failed to open for pcm %u,%u. %s\n",
                 cmd->card, cmd->device,
                 pcm_get_error(ctx->pcm));
-        fclose(ctx->file);
+        // fclose(ctx->file);
         pcm_close(ctx->pcm);
         return -1;
     }
@@ -274,10 +274,10 @@ void ctx_free(struct ctx *ctx)
     {
         pcm_close(ctx->pcm);
     }
-    if (ctx->file != NULL)
-    {
-        fclose(ctx->file);
-    }
+    // if (ctx->file != NULL)
+    // {
+    //     fclose(ctx->file);
+    // }
 }
 
 static int _close = 0;
@@ -291,22 +291,6 @@ void stream_close(int sig)
     _close = 1;
 }
 
-void print_usage(const char *argv0)
-{
-    fprintf(stderr, "usage: %s file.wav [options]\n", argv0);
-    fprintf(stderr, "options:\n");
-    fprintf(stderr, "-D | --card   <card number>    The card to receive the audio\n");
-    fprintf(stderr, "-d | --device <device number>  The device to receive the audio\n");
-    fprintf(stderr, "-p | --period-size <size>      The size of the PCM's period\n");
-    fprintf(stderr, "-n | --period-count <count>    The number of PCM periods\n");
-    fprintf(stderr, "-i | --file-type <file-type>   The type of file to read (raw or wav)\n");
-    fprintf(stderr, "-c | --channels <count>        The amount of channels per frame\n");
-    fprintf(stderr, "-r | --rate <rate>             The amount of frames per second\n");
-    fprintf(stderr, "-b | --bits <bit-count>        The number of bits in one sample\n");
-    fprintf(stderr, "-f | --float                   The frames are in floating-point PCM\n");
-    fprintf(stderr, "-M | --mmap                    Use memory mapped IO to play audio\n");
-}
-
 int n;
 int port;
 int sockfd;
@@ -316,106 +300,21 @@ struct sockaddr_in client_addr;
 socklen_t addr_size = sizeof(client_addr);;
 struct in_addr client_ip_addr; // Client IP address
 
-int main(int argc, char **argv)
+int main()
 {
-    int c;
+    // int c;
     struct cmd cmd;
     struct ctx ctx;
-    struct optparse opts;
-    struct optparse_long long_options[] = {
-        {"card", 'D', OPTPARSE_REQUIRED},
-        {"device", 'd', OPTPARSE_REQUIRED},
-        {"period-size", 'p', OPTPARSE_REQUIRED},
-        {"period-count", 'n', OPTPARSE_REQUIRED},
-        {"file-type", 'i', OPTPARSE_REQUIRED},
-        {"channels", 'c', OPTPARSE_REQUIRED},
-        {"rate", 'r', OPTPARSE_REQUIRED},
-        {"bits", 'b', OPTPARSE_REQUIRED},
-        {"float", 'f', OPTPARSE_NONE},
-        {"mmap", 'M', OPTPARSE_NONE},
-        {"help", 'h', OPTPARSE_NONE},
-        {0, 0, 0}};
 
-    if (argc < 2)
-    {
-        print_usage(argv[0]);
+    // if (argc < 2)
+    // {
+        // print_usage(argv[0]);
         // return EXIT_FAILURE;
-    }
+    // }
 
     cmd_init(&cmd);
-    optparse_init(&opts, argv);
-    while ((c = optparse_long(&opts, long_options, NULL)) != -1)
-    {
-        switch (c)
-        {
-        case 'D':
-            if (sscanf(opts.optarg, "%u", &cmd.card) != 1)
-            {
-                fprintf(stderr, "failed parsing card number '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'd':
-            if (sscanf(opts.optarg, "%u", &cmd.device) != 1)
-            {
-                fprintf(stderr, "failed parsing device number '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'p':
-            if (sscanf(opts.optarg, "%u", &cmd.config.period_size) != 1)
-            {
-                fprintf(stderr, "failed parsing period size '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'n':
-            if (sscanf(opts.optarg, "%u", &cmd.config.period_count) != 1)
-            {
-                fprintf(stderr, "failed parsing period count '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'c':
-            if (sscanf(opts.optarg, "%u", &cmd.config.channels) != 1)
-            {
-                fprintf(stderr, "failed parsing channel count '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'r':
-            if (sscanf(opts.optarg, "%u", &cmd.config.rate) != 1)
-            {
-                fprintf(stderr, "failed parsing rate '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'i':
-            cmd.filetype = opts.optarg;
-            break;
-        case 'b':
-            if (sscanf(opts.optarg, "%u", &cmd.bits) != 1)
-            {
-                fprintf(stderr, "failed parsing bits per one sample '%s'\n", argv[1]);
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'f':
-            cmd.is_float = true;
-            break;
-        case 'M':
-            cmd.flags |= PCM_MMAP;
-            break;
-        case 'h':
-            print_usage(argv[0]);
-            return EXIT_SUCCESS;
-        case '?':
-            fprintf(stderr, "%s\n", opts.errmsg);
-            return EXIT_FAILURE;
-        }
-    }
-    cmd.filename = optparse_arg(&opts);
 
+    cmd.filename = "Fileee";
     if (cmd.filename != NULL && cmd.filetype == NULL &&
         (cmd.filetype = strrchr(cmd.filename, '.')) != NULL)
     {
